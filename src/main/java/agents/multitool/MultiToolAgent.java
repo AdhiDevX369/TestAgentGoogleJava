@@ -55,10 +55,11 @@ public class MultiToolAgent {
         return LlmAgent.builder()
                 .name(NAME)
                 .model("gemini-2.0-flash")
-                .description("Agent to answer questions about the time and weather in a city.")
+                .description("Agent to answer questions about the time and weather in multiple cities.")
                 .instruction(
                         "You are a helpful agent who can answer user questions about the time and weather"
-                                + " in a city. When reporting time or weather, use the city name as provided in the query.")
+                                + " in one or multiple cities. When asked about multiple cities, provide information for each city separately."
+                                + " When reporting time or weather, use the city name as provided in the query.")
                 .tools(
                         FunctionTool.create(MultiToolAgent.class, "getCurrentTime"),
                         FunctionTool.create(MultiToolAgent.class, "getWeather"))
@@ -217,22 +218,15 @@ public class MultiToolAgent {
                 if (response.isEmpty()) {
                     System.out.println("No response from agent.");
                 } else {
-                    String report = response;
+                    response = response.replaceAll("Function Call:.*?\\}\\}", "");
+                    response = response.replaceAll("FunctionCall:.*?\\]\\}", "");
+                    response = response.replaceAll("report=", "");
+                    response = response.replaceAll("\\{status=success, ", "");
+                    response = response.replaceAll("\\}", "");
 
-                    int reportIndex = response.indexOf("report=");
-                    if (reportIndex != -1) {
-                        report = response.substring(reportIndex + 7);
-                        int endIndex = report.indexOf("}]}");
-                        if (endIndex != -1) {
-                            report = report.substring(0, endIndex);
-                        }
-                    } else {
-                        int okIndex = response.lastIndexOf("OK.");
-                        if (okIndex != -1) {
-                            report = response.substring(okIndex + 3).trim();
-                        }
-                    }
-                    System.out.println(report);
+                    response = response.trim();
+
+                    System.out.println(response);
                 }
             }
         }
